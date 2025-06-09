@@ -1,8 +1,11 @@
 from tracer_tools import tools
 from tracer_tools import app_tools
 from pprint import pprint
-from page_design import map_face
+from page_design import UI
 import os
+
+#
+import streamlit as st
 
 def main():
     polygon = [[[151.301454, -33.700754],
@@ -44,7 +47,17 @@ def main():
         print(app_tools.convert_unix_to_dt(img['properties']['system:time_start']).strftime('%Y-%m-%d'))
 
 def main2():
-    M = map_face(13.198839454428844, 122.30218706556167)
+    UI._set_session_states()
+    MAP = UI.map_face(13.198839454428844, 122.30218706556167)
+    INPUTS = UI.process_request(MAP)
+
+    if st.session_state['session_objects'] is None:
+        st.info('Consider drawing a polygon on the map to proceed.')
+    else:
+        FILTER_IMG = UI.display_image_states()
     
+
+
+
 if __name__ == "__main__":
-    main()
+    main2()
