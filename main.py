@@ -1,5 +1,4 @@
 from tracer_tools import tools
-from tracer_tools import app_tools
 from pprint import pprint
 from page_design import UI
 import os
@@ -7,44 +6,15 @@ import os
 #
 import streamlit as st
 
-def main():
-    polygon = [[[151.301454, -33.700754],
-            [151.311453, -33.702075],
-            [151.307237, -33.739761],
-            [151.294220, -33.736329],
-            [151.301454, -33.700754]]]
-    
-    polygon = tools.smallest_rectangle(polygon)
-    dates = ['2024-12-31', '2025-06-09']
-    sitename = 'NARRA'
-    prj_id = 'gee-playground-jas13'
-    filepath_data = os.path.join(os.getcwd(), 'data')
-    
-    inputs = {
-    'polygon': polygon,
-    'dates': dates,
-    'sat_list': ['S2'],
-    'sitename': sitename,
-    'ee_project_id': prj_id,
-    'filepath': filepath_data,
-    # 'LandsatWRS': '089083',
-    # 'S2tile': '56HLH',
-        }
-    
-    img = tools.check_images_available(inputs) #returns t1 and t2 images in a tuple
-    s2Img = img[0]['S2']
+#the structure goes like this:
+# LIST of IMGS
+#   - DICT of IMG Metadata
+#       - bands (list of bands)
+#       - id (earth engine dataset id)
+#       - properties (image params)
+#       - type (datatype e.g. Image)
+#       - version ID (version of the image)
 
-    #the structure goes like this:
-    # LIST of IMGS
-    #   - DICT of IMG Metadata
-    #       - bands (list of bands)
-    #       - id (earth engine dataset id)
-    #       - properties (image params)
-    #       - type (datatype e.g. Image)
-    #       - version ID (version of the image)
-
-    for img in s2Img:
-        print(app_tools.convert_unix_to_dt(img['properties']['system:time_start']).strftime('%Y-%m-%d'))
 
 def main2():
     UI._set_session_states()
@@ -54,10 +24,24 @@ def main2():
     if st.session_state['session_objects'] is None:
         st.info('Consider drawing a polygon on the map to proceed.')
     else:
-        FILTER_IMG = UI.display_image_states()
-    
+        with st.form('create-trace'):
+            FILTER_IMG = UI.display_image_states()
+            SETTINGS = UI.settings()
 
+            submit = st.form_submit_button('Run')
+            if submit:
+                IMAGES_DOWNLOAD = UI.retrieve_data(st.session_state.last_inputs,
+                                                   FILTER_IMG[0], SETTINGS)
 
-
+    try:
+        st.download_button(
+            label="Download Filtered Image Metadata (JSON)",
+            data=FILTER_IMG[1],
+            file_name="sentinel2_image_metadata.json",
+            mime="application/json"
+        )
+    except UnboundLocalError: # data unavailable
+        st.toast('Download JSON Metadata disabled.')
+        
 if __name__ == "__main__":
     main2()
